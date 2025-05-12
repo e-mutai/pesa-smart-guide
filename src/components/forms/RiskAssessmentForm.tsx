@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { RiskProfileData } from '@/services/api';
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -11,7 +12,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 
-// Form validation schema
+// Form validation schema matching the RiskProfileData interface
 const riskAssessmentSchema = z.object({
   age: z.string().min(1, "Age is required"),
   monthlyIncome: z.string().min(1, "Monthly income is required"),
@@ -22,16 +23,16 @@ const riskAssessmentSchema = z.object({
   monthlyContribution: z.string().min(1, "Monthly contribution is required"),
 });
 
-type RiskAssessmentFormValues = z.infer<typeof riskAssessmentSchema>;
+type FormValues = z.infer<typeof riskAssessmentSchema>;
 
 interface RiskAssessmentFormProps {
-  onSubmit: (data: RiskAssessmentFormValues) => void;
+  onSubmit: (data: RiskProfileData) => void;
 }
 
 const RiskAssessmentForm: React.FC<RiskAssessmentFormProps> = ({ onSubmit }) => {
   const [riskLevel, setRiskLevel] = useState(5);
 
-  const form = useForm<RiskAssessmentFormValues>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(riskAssessmentSchema),
     defaultValues: {
       age: "",
@@ -44,8 +45,9 @@ const RiskAssessmentForm: React.FC<RiskAssessmentFormProps> = ({ onSubmit }) => 
     },
   });
 
-  const handleSubmit = (values: RiskAssessmentFormValues) => {
-    onSubmit(values);
+  const handleSubmit = (values: FormValues) => {
+    // Ensure values match the RiskProfileData interface
+    onSubmit(values as RiskProfileData);
   };
 
   return (
