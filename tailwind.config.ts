@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,15 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+        // Custom theme colors for our app
+        finance: {
+          primary: "#0A2647",
+          secondary: "#144272",
+          accent: "#008000",
+          light: "#F0F7FF",
+          muted: "#64748b"
+        }
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
