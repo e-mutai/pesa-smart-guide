@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
 import SignInForm from './SignInForm';
 import SignUpForm from './SignUpForm';
 
@@ -22,7 +22,8 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md p-0" hideClose>
+      <DialogContent className="sm:max-w-md p-0">
+        {/* We've removed the hideClose prop and will let the X button be handled by the child components */}
         {view === 'signin' ? (
           <SignInForm 
             onClose={onClose} 
