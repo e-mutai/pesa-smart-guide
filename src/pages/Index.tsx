@@ -1,12 +1,18 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, TrendingUp, Shield, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import AuthModal from '@/components/auth/AuthModal';
 
 const Index = () => {
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  const openSignUp = () => {
+    setIsAuthModalOpen(true);
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -25,7 +31,7 @@ const Index = () => {
                   and unit trust funds in Kenya, tailored to your financial goals and risk profile.
                 </p>
                 <div className="flex flex-wrap gap-4">
-                  <Button asChild size="lg" className="bg-white text-finance-primary hover:bg-gray-100">
+                  <Button asChild size="lg" className="bg-white text-finance-primary hover:bg-gray-100" onClick={openSignUp}>
                     <Link to="/recommendations">Get My Recommendations</Link>
                   </Button>
                   <Button asChild variant="outline" size="lg" className="bg-white/20 border-white text-white hover:bg-white hover:text-finance-primary font-medium border-2">
@@ -134,14 +140,20 @@ const Index = () => {
             <p className="text-lg text-gray-600 mb-8">
               Join thousands of Kenyans who use Pesa Smart to navigate investment options and grow their wealth.
             </p>
-            <Button asChild size="lg" className="bg-finance-primary hover:bg-finance-secondary text-white">
-              <Link to="/recommendations">Get My Fund Recommendations</Link>
+            <Button size="lg" className="bg-finance-primary hover:bg-finance-secondary text-white" onClick={openSignUp}>
+              Get My Fund Recommendations
             </Button>
           </div>
         </section>
       </main>
       
       <Footer />
+      
+      <AuthModal 
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialView="signup"
+      />
     </div>
   );
 };
