@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { X } from 'lucide-react';
 
 interface SignUpFormProps {
   onClose: () => void;
@@ -16,12 +15,19 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose, switchToSignIn }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match.');
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
@@ -37,15 +43,9 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose, switchToSignIn }) => {
   };
 
   return (
-    <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
-      <div className="flex justify-between items-center mb-6">
+    <div className="w-full max-w-md p-6 bg-white rounded-lg">
+      <div className="mb-6">
         <h2 className="text-2xl font-bold text-finance-primary">Create Account</h2>
-        <button 
-          onClick={onClose}
-          className="p-1 rounded-full hover:bg-gray-100"
-        >
-          <X size={20} />
-        </button>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -88,6 +88,22 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose, switchToSignIn }) => {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            required
+            className="w-full"
+            minLength={6}
+          />
+        </div>
+        
+        <div>
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+            Confirm Password
+          </label>
+          <Input
+            id="confirmPassword"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="••••••••"
             required
             className="w-full"

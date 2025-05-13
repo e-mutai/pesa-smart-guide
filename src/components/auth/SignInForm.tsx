@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { X } from 'lucide-react';
 
 interface SignInFormProps {
   onClose: () => void;
@@ -36,15 +35,9 @@ const SignInForm: React.FC<SignInFormProps> = ({ onClose, switchToSignUp }) => {
   };
 
   return (
-    <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
-      <div className="flex justify-between items-center mb-6">
+    <div className="w-full max-w-md p-6 bg-white rounded-lg">
+      <div className="mb-6">
         <h2 className="text-2xl font-bold text-finance-primary">Sign In</h2>
-        <button 
-          onClick={onClose}
-          className="p-1 rounded-full hover:bg-gray-100"
-        >
-          <X size={20} />
-        </button>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">
