@@ -1,12 +1,12 @@
-
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
+from sqlalchemy.orm import Session
 from .models import (
     RiskProfileData, UserCreate, UserLogin, TokenResponse,
     RiskProfileResponse, Fund, RecommendationRequest, ForecastRequest
 )
 from .database import (
-    users_db, mock_funds, get_fund_recommendations, 
-    get_risk_profile, get_fund_forecast, get_fund_metrics
+    users_db, get_all_funds, get_fund_by_id, get_fund_recommendations, 
+    get_risk_profile, get_fund_forecast, get_fund_metrics, get_db
 )
 
 # Create router
@@ -48,7 +48,7 @@ def login_user(user: UserLogin):
     return TokenResponse(access_token=f"mock_token_{user.email}", token_type="bearer")
 
 @router.post("/api/recommendations")
-def get_recommendations(profile_data: RiskProfileData):
+def get_recommendations(profile_data: RiskProfileData, db: Session = Depends(get_db)):
     recommendations = get_fund_recommendations(profile_data)
     return recommendations
 
@@ -81,25 +81,25 @@ def analyze_risk_profile(profile_data: RiskProfileData):
     )
 
 @router.get("/api/funds")
-def get_all_funds():
-    return mock_funds
+def get_all_funds_api(db: Session = Depends(get_db)):
+    return get_all_funds()
 
 @router.get("/api/funds/{fund_id}")
-def get_fund_details(fund_id: str):
-    fund = next((f for f in mock_funds if f["id"] == fund_id), None)
+def get_fund_details(fund_id: str, db: Session = Depends(get_db)):
+    fund = get_fund_by_id(fund_id)
     if not fund:
         raise HTTPException(status_code=404, detail="Fund not found")
     return fund
 
 @router.post("/api/forecast")
-def forecast_fund_performance(request: ForecastRequest):
+def forecast_fund_performance(request: ForecastRequest, db: Session = Depends(get_db)):
     forecast = get_fund_forecast(request.fundId, request.periods)
     if not forecast:
         raise HTTPException(status_code=404, detail="Fund not found")
     return {"forecast": forecast}
 
 @router.get("/api/funds/{fund_id}/metrics")
-def get_fund_performance_metrics(fund_id: str):
+def get_fund_performance_metrics(fund_id: str, db: Session = Depends(get_db)):
     metrics = get_fund_metrics(fund_id)
     if not metrics:
         raise HTTPException(status_code=404, detail="Fund not found")

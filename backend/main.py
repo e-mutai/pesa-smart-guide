@@ -1,7 +1,9 @@
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from .routes import router
+from .database import get_db, setup_db
+from sqlalchemy.orm import Session
 
 # Initialize FastAPI app
 app = FastAPI(title="Investment Recommendation API")
@@ -18,9 +20,12 @@ app.add_middleware(
 # Include router
 app.include_router(router)
 
+# Add DB connection check endpoint
+@app.get("/api/db-status")
+def check_db_connection(db: Session = Depends(get_db)):
+    return {"status": "connected" if db is not None else "fallback"}
+
 # If running this file directly
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
-# Start the app with: uvicorn main:app --reload
