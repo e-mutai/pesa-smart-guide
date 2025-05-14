@@ -14,19 +14,23 @@ const FundRecommendationsSidebar = () => {
     <div>
       <h2 className="text-xl font-semibold mb-4">Recommended Funds</h2>
       <div className="space-y-4">
-        {recommendedFunds.map((fund) => (
-          <FundCard
-            key={fund.id}
-            name={fund.name}
-            company={fund.company}
-            performancePercent={fund.performancePercent}
-            risk={fund.risk}
-            description={fund.description}
-            fee={fund.fee}
-            minimumInvestment={fund.minimumInvestment}
-            onClick={() => viewFundDetails(fund)}
-          />
-        ))}
+        {Array.isArray(recommendedFunds) && recommendedFunds.length > 0 ? (
+          recommendedFunds.map((fund) => (
+            <FundCard
+              key={fund.id}
+              name={fund.name}
+              company={fund.company}
+              performancePercent={fund.performancePercent}
+              risk={fund.risk}
+              description={fund.description}
+              fee={fund.fee}
+              minimumInvestment={fund.minimumInvestment}
+              onClick={() => viewFundDetails(fund)}
+            />
+          ))
+        ) : (
+          <p className="text-gray-500">No recommended funds available.</p>
+        )}
         
         <div className="mt-8">
           <button 
