@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 import json
 from datetime import datetime, timedelta
+import random
 
 # Initialize FastAPI app
 app = FastAPI(title="Investment Recommendation API")
@@ -59,6 +60,34 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str
 
+# ----- Helper Functions -----
+
+def generate_mock_data(avg_return, months):
+    """Generate mock historical data for funds"""
+    today = datetime.now()
+    data = []
+    current_value = 100
+    benchmark_value = 100
+    
+    for i in range(months - 1, -1, -1):
+        date = today - timedelta(days=i*30)
+        date_str = date.strftime("%Y-%m")
+        
+        # Add some random variation
+        monthly_return = (avg_return / 12) + (random.random() * 2 - 1)
+        benchmark_return = (8.5 / 12) + (random.random() * 1.5 - 0.75)
+        
+        current_value *= (1 + monthly_return / 100)
+        benchmark_value *= (1 + benchmark_return / 100)
+        
+        data.append({
+            "date": date_str,
+            "value": round(current_value - 100, 2),
+            "benchmark": round(benchmark_value - 100, 2)
+        })
+    
+    return data
+
 # ----- Mock Database -----
 
 # In a real implementation, this would be replaced with actual database connections
@@ -104,35 +133,6 @@ mock_funds = [
 ]
 
 users_db = {}
-
-# ----- Helper Functions -----
-
-def generate_mock_data(avg_return, months):
-    """Generate mock historical data for funds"""
-    today = datetime.now()
-    data = []
-    current_value = 100
-    benchmark_value = 100
-    
-    for i in range(months - 1, -1, -1):
-        date = today - timedelta(days=i*30)
-        date_str = date.strftime("%Y-%m")
-        
-        # Add some random variation
-        import random
-        monthly_return = (avg_return / 12) + (random.random() * 2 - 1)
-        benchmark_return = (8.5 / 12) + (random.random() * 1.5 - 0.75)
-        
-        current_value *= (1 + monthly_return / 100)
-        benchmark_value *= (1 + benchmark_return / 100)
-        
-        data.append({
-            "date": date_str,
-            "value": round(current_value - 100, 2),
-            "benchmark": round(benchmark_value - 100, 2)
-        })
-    
-    return data
 
 def get_fund_recommendations(profile: RiskProfileData) -> List[Fund]:
     """
@@ -206,3 +206,4 @@ def get_fund_details(fund_id: str):
     return fund
 
 # Start the app with: uvicorn main:app --reload
+
