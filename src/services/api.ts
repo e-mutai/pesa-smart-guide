@@ -3,7 +3,9 @@ import axios from 'axios';
 
 // Setup axios with a base URL (adjust when actual backend is available)
 const api = axios.create({
-  baseURL: '/api', // Change this to your actual API base URL
+  baseURL: process.env.NODE_ENV === 'production' 
+    ? '/api'  // Production API path
+    : 'http://localhost:8000/api',  // Local development FastAPI server
   headers: {
     'Content-Type': 'application/json',
   },
@@ -42,59 +44,49 @@ export const apiService = {
   // Get fund recommendations based on user profile
   getFundRecommendations: async (profileData: RiskProfileData) => {
     try {
-      // This will be replaced with actual API call when backend is ready
-      // For now return mock data
-      console.log("Submitting profile data:", profileData);
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Return mock data
-      return mockRecommendations;
+      // Try to get recommendations from the backend
+      const response = await api.post('/recommendations', profileData);
+      return response.data;
     } catch (error) {
-      console.error("Error getting recommendations:", error);
-      throw error;
+      console.error("Error getting recommendations from API:", error);
+      console.log("Falling back to mock data");
+      // Fallback to mock data if API is unavailable
+      return mockRecommendations;
     }
   },
   
   // Get detailed information about a specific fund
   getFundDetails: async (fundId: string) => {
     try {
-      // This will be replaced with actual API call when backend is ready
-      console.log("Fetching fund details for:", fundId);
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Find the fund in our mock data
+      // Try to get fund details from the backend
+      const response = await api.get(`/funds/${fundId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error getting fund details from API:", error);
+      console.log("Falling back to mock data");
+      // Fallback to mock data
       const fund = mockRecommendations.find(f => f.id === fundId);
       if (!fund) throw new Error("Fund not found");
-      
       return fund;
-    } catch (error) {
-      console.error("Error getting fund details:", error);
-      throw error;
     }
   },
   
   // Get all available funds
   getAllFunds: async () => {
     try {
-      // This will be replaced with actual API call when backend is ready
-      console.log("Fetching all funds");
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      return mockRecommendations;
+      // Try to get all funds from the backend
+      const response = await api.get('/funds');
+      return response.data;
     } catch (error) {
-      console.error("Error getting all funds:", error);
-      throw error;
+      console.error("Error getting all funds from API:", error);
+      console.log("Falling back to mock data");
+      // Fallback to mock data
+      return mockRecommendations;
     }
   }
 };
 
-// Mock data for development
+// Mock data for development and fallback
 const mockRecommendations: Fund[] = [
   {
     id: "fund1",
