@@ -1,7 +1,13 @@
 
 from fastapi import APIRouter, HTTPException, status
-from .models import RiskProfileData, UserCreate, UserLogin, TokenResponse
-from .database import users_db, mock_funds, get_fund_recommendations
+from .models import (
+    RiskProfileData, UserCreate, UserLogin, TokenResponse,
+    RiskProfileResponse, Fund, RecommendationRequest, ForecastRequest
+)
+from .database import (
+    users_db, mock_funds, get_fund_recommendations, 
+    get_risk_profile, get_fund_forecast, get_fund_metrics
+)
 
 # Create router
 router = APIRouter()
@@ -46,6 +52,34 @@ def get_recommendations(profile_data: RiskProfileData):
     recommendations = get_fund_recommendations(profile_data)
     return recommendations
 
+@router.post("/api/risk-profile")
+def analyze_risk_profile(profile_data: RiskProfileData):
+    risk_category = get_risk_profile(profile_data)
+    
+    # Generate appropriate explanation based on risk category
+    explanations = {
+        "Conservative": "Your profile indicates a preference for stability and capital preservation. Conservative investments typically have lower returns but also lower risk of losses.",
+        "Moderate": "Your profile suggests a balanced approach to risk, with a preference for some stability while accepting moderate risk for potential growth.",
+        "Balanced": "You have a balanced risk profile, willing to accept market fluctuations for long-term growth potential while maintaining some stability.",
+        "Growth": "Your profile indicates comfort with taking calculated risks for higher growth potential, understanding that investments may experience significant volatility.",
+        "Aggressive": "You have a high risk tolerance, prioritizing maximum growth potential while accepting the possibility of significant market fluctuations."
+    }
+    
+    # Map risk category to risk score
+    risk_scores = {
+        "Conservative": 2,
+        "Moderate": 4, 
+        "Balanced": 6,
+        "Growth": 8,
+        "Aggressive": 10
+    }
+    
+    return RiskProfileResponse(
+        riskCategory=risk_category,
+        riskScore=risk_scores.get(risk_category, 5),
+        explanation=explanations.get(risk_category, "Your risk profile has been analyzed based on your financial situation and preferences.")
+    )
+
 @router.get("/api/funds")
 def get_all_funds():
     return mock_funds
@@ -56,3 +90,17 @@ def get_fund_details(fund_id: str):
     if not fund:
         raise HTTPException(status_code=404, detail="Fund not found")
     return fund
+
+@router.post("/api/forecast")
+def forecast_fund_performance(request: ForecastRequest):
+    forecast = get_fund_forecast(request.fundId, request.periods)
+    if not forecast:
+        raise HTTPException(status_code=404, detail="Fund not found")
+    return {"forecast": forecast}
+
+@router.get("/api/funds/{fund_id}/metrics")
+def get_fund_performance_metrics(fund_id: str):
+    metrics = get_fund_metrics(fund_id)
+    if not metrics:
+        raise HTTPException(status_code=404, detail="Fund not found")
+    return metrics

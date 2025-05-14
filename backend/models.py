@@ -1,6 +1,6 @@
 
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any, Union
 
 # ----- User Models -----
 
@@ -28,12 +28,28 @@ class RiskProfileData(BaseModel):
     existingInvestments: str
     monthlyContribution: str
 
+class RiskProfileResponse(BaseModel):
+    riskCategory: str
+    riskScore: int
+    explanation: str
+
 # ----- Fund Models -----
 
 class HistoricalDataPoint(BaseModel):
     date: str
     value: float
     benchmark: Optional[float] = None
+
+class ForecastDataPoint(BaseModel):
+    date: str
+    predicted_value: float
+    lower_bound: float
+    upper_bound: float
+
+class PerformanceMetrics(BaseModel):
+    average_return: float
+    volatility: float
+    sharpe_ratio: float
 
 class Fund(BaseModel):
     id: str
@@ -46,3 +62,13 @@ class Fund(BaseModel):
     minimumInvestment: float
     assetClass: str
     historicalData: List[HistoricalDataPoint]
+    forecast: Optional[List[ForecastDataPoint]] = None
+    metrics: Optional[PerformanceMetrics] = None
+
+class RecommendationRequest(BaseModel):
+    profileData: RiskProfileData
+    additionalPreferences: Optional[Dict[str, Any]] = None
+
+class ForecastRequest(BaseModel):
+    fundId: str
+    periods: Optional[int] = 6

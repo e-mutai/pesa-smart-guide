@@ -2,6 +2,11 @@
 from .models import Fund, RiskProfileData
 from .utils import generate_mock_data
 from typing import List
+from .ml_models import RiskProfiler, FundMatcher, FundForecaster
+
+# Initialize models
+risk_profiler = RiskProfiler()
+forecaster = FundForecaster()
 
 # Mock database for users
 users_db = {}
@@ -43,25 +48,75 @@ mock_funds = [
         "minimumInvestment": 7500,
         "assetClass": "Mixed Allocation",
         "historicalData": generate_mock_data(11.5, 12)
-    }
+    },
+    {
+        "id": "fund4",
+        "name": "Fixed Income Fund",
+        "company": "Sanlam Investments",
+        "performancePercent": 10.3,
+        "risk": "Low-Medium",
+        "description": "Invests primarily in government and corporate bonds. Aims to provide regular income with modest capital appreciation.",
+        "fee": 1.8,
+        "minimumInvestment": 5000,
+        "assetClass": "Fixed Income",
+        "historicalData": generate_mock_data(10.3, 12)
+    },
+    {
+        "id": "fund5",
+        "name": "Aggressive Growth Fund",
+        "company": "Old Mutual Investment Group",
+        "performancePercent": -2.5,
+        "risk": "Very High",
+        "description": "Focuses on high-growth sectors and companies with higher volatility. Suitable for long-term investors with high risk tolerance.",
+        "fee": 2.8,
+        "minimumInvestment": 15000,
+        "assetClass": "Equity",
+        "historicalData": generate_mock_data(-2.5, 12)
+    },
 ]
+
+# Initialize fund matcher with our mock funds data
+fund_matcher = FundMatcher(mock_funds)
 
 def get_fund_recommendations(profile: RiskProfileData) -> List[Fund]:
     """
-    Determine which funds to recommend based on the user's risk profile
-    In a real app, this would use a more sophisticated algorithm
+    Use ML models to determine which funds to recommend based on the user's risk profile
     """
-    recommended_funds = []
+    # Get risk category from profile
+    risk_category = risk_profiler.predict_risk_profile(profile.dict())
     
-    # Simple logic - match based on risk tolerance
-    if profile.riskTolerance <= 3:
-        # Low risk - Money Market Fund
-        recommended_funds.append(next(f for f in mock_funds if f["id"] == "fund1"))
-    elif profile.riskTolerance <= 7:
-        # Medium risk - Balanced Fund
-        recommended_funds.append(next(f for f in mock_funds if f["id"] == "fund3"))
-    else:
-        # High risk - Equity Growth Fund
-        recommended_funds.append(next(f for f in mock_funds if f["id"] == "fund2"))
+    # Match funds based on risk category and profile
+    recommended_funds = fund_matcher.match_funds(profile.dict(), risk_category)
     
+    # Add forecasts to each fund
+    for fund in recommended_funds:
+        fund["forecast"] = forecaster.predict_future_performance(
+            fund["id"], 
+            fund["historicalData"]
+        )
+        fund["metrics"] = forecaster.get_performance_metrics(
+            fund["id"],
+            fund["historicalData"]
+        )
+        
     return recommended_funds
+
+def get_risk_profile(profile: RiskProfileData) -> str:
+    """Get risk category for a user profile"""
+    return risk_profiler.predict_risk_profile(profile.dict())
+
+def get_fund_forecast(fund_id: str, periods: int = 6):
+    """Get forecast for a specific fund"""
+    fund = next((f for f in mock_funds if f["id"] == fund_id), None)
+    if not fund:
+        return None
+        
+    return forecaster.predict_future_performance(fund_id, fund["historicalData"], periods)
+
+def get_fund_metrics(fund_id: str):
+    """Get performance metrics for a specific fund"""
+    fund = next((f for f in mock_funds if f["id"] == fund_id), None)
+    if not fund:
+        return None
+        
+    return forecaster.get_performance_metrics(fund_id, fund["historicalData"])

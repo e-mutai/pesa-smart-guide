@@ -1,7 +1,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import router
+from .routes import router
 
 # Initialize FastAPI app
 app = FastAPI(title="Investment Recommendation API")
@@ -17,5 +17,10 @@ app.add_middleware(
 
 # Include router
 app.include_router(router)
+
+# If running this file directly
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
 
 # Start the app with: uvicorn main:app --reload
