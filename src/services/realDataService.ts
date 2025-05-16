@@ -36,7 +36,8 @@ const kenyanFunds = [
     fee: 1.5,
     minimumInvestment: 5000,
     assetClass: "Money Market",
-    symbol: "BIL" // Treasury Bills ETF as proxy
+    symbol: "BIL", // Treasury Bills ETF as proxy
+    historicalData: [] // Adding the required historicalData property with an empty array as default
   },
   {
     id: "fund2",
@@ -48,7 +49,8 @@ const kenyanFunds = [
     fee: 2.5,
     minimumInvestment: 10000,
     assetClass: "Equity",
-    symbol: "KCB.NR" // Kenya Commercial Bank as proxy
+    symbol: "KCB.NR", // Kenya Commercial Bank as proxy
+    historicalData: [] // Adding the required historicalData property with an empty array as default
   },
   {
     id: "fund3",
@@ -60,7 +62,8 @@ const kenyanFunds = [
     fee: 2.0,
     minimumInvestment: 7500,
     assetClass: "Mixed Allocation",
-    symbol: "AOK" // iShares Core Conservative Allocation ETF as proxy
+    symbol: "AOK", // iShares Core Conservative Allocation ETF as proxy
+    historicalData: [] // Adding the required historicalData property with an empty array as default
   },
   {
     id: "fund4",
@@ -72,7 +75,8 @@ const kenyanFunds = [
     fee: 1.8,
     minimumInvestment: 5000,
     assetClass: "Fixed Income",
-    symbol: "AGG" // iShares Core U.S. Aggregate Bond ETF as proxy
+    symbol: "AGG", // iShares Core U.S. Aggregate Bond ETF as proxy
+    historicalData: [] // Adding the required historicalData property with an empty array as default
   },
   {
     id: "fund5",
@@ -84,7 +88,8 @@ const kenyanFunds = [
     fee: 2.8,
     minimumInvestment: 15000,
     assetClass: "Equity",
-    symbol: "QQQ" // Invesco QQQ Trust as proxy
+    symbol: "QQQ", // Invesco QQQ Trust as proxy
+    historicalData: [] // Adding the required historicalData property with an empty array as default
   },
   {
     id: "fund6",
@@ -96,7 +101,8 @@ const kenyanFunds = [
     fee: 2.2,
     minimumInvestment: 10000,
     assetClass: "Mixed Allocation",
-    symbol: "VBMFX" // Vanguard Total Bond Market Index Fund as proxy
+    symbol: "VBMFX", // Vanguard Total Bond Market Index Fund as proxy
+    historicalData: [] // Adding the required historicalData property with an empty array as default
   },
   {
     id: "fund7",
@@ -108,7 +114,8 @@ const kenyanFunds = [
     fee: 1.75,
     minimumInvestment: 8000,
     assetClass: "Equity",
-    symbol: "VTI" // Vanguard Total Stock Market ETF as proxy
+    symbol: "VTI", // Vanguard Total Stock Market ETF as proxy
+    historicalData: [] // Adding the required historicalData property with an empty array as default
   },
   {
     id: "fund8",
@@ -120,7 +127,8 @@ const kenyanFunds = [
     fee: 1.4,
     minimumInvestment: 1000,
     assetClass: "Money Market",
-    symbol: "VTIP" // Vanguard Short-Term Inflation-Protected Securities ETF as proxy
+    symbol: "VTIP", // Vanguard Short-Term Inflation-Protected Securities ETF as proxy
+    historicalData: [] // Adding the required historicalData property with an empty array as default
   },
   {
     id: "fund9",
@@ -132,7 +140,8 @@ const kenyanFunds = [
     fee: 3.0,
     minimumInvestment: 20000,
     assetClass: "Alternative",
-    symbol: "VGSIX" // Vanguard Real Estate Index Fund as proxy
+    symbol: "VGSIX", // Vanguard Real Estate Index Fund as proxy
+    historicalData: [] // Adding the required historicalData property with an empty array as default
   }
 ];
 
