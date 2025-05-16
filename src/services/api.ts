@@ -45,8 +45,12 @@ export const apiService = {
   // Get fund recommendations based on user profile
   getFundRecommendations: async (profileData: RiskProfileData) => {
     try {
-      const response = await api.post('/recommendations', profileData);
-      const recommendations = response.data;
+      // Instead of calling a backend API, use the real data service directly
+      const allFunds = realDataService.getAvailableFunds();
+      
+      // For now, just return all funds as recommendations
+      // In a real app, this would use the profile data to filter funds
+      const recommendations = allFunds.slice(0, 3); // Return top 3 funds as recommendations
       
       // Enrich recommendations with real data
       const enrichPromises = recommendations.map((fund: Fund) => 
@@ -55,7 +59,7 @@ export const apiService = {
       
       return await Promise.all(enrichPromises);
     } catch (error) {
-      console.error("Error getting recommendations from API:", error);
+      console.error("Error getting recommendations:", error);
       throw error; // Let the caller handle the error
     }
   },
@@ -63,13 +67,17 @@ export const apiService = {
   // Get detailed information about a specific fund
   getFundDetails: async (fundId: string) => {
     try {
-      const response = await api.get(`/funds/${fundId}`);
-      const fund = response.data;
+      // Use real data service to get fund by ID
+      const fund = realDataService.getFundById(fundId);
+      
+      if (!fund) {
+        throw new Error(`Fund with ID ${fundId} not found`);
+      }
       
       // Enrich with real data
       return await realDataService.enrichFundWithRealData(fund);
     } catch (error) {
-      console.error("Error getting fund details from API:", error);
+      console.error("Error getting fund details:", error);
       throw error; // Let the caller handle the error
     }
   },
@@ -77,8 +85,8 @@ export const apiService = {
   // Get all available funds
   getAllFunds: async () => {
     try {
-      const response = await api.get('/funds');
-      const funds = response.data;
+      // Use real data service directly instead of API call
+      const funds = realDataService.getAvailableFunds();
       
       // Enrich with real data
       const enrichPromises = funds.map((fund: Fund) => 
@@ -87,7 +95,7 @@ export const apiService = {
       
       return await Promise.all(enrichPromises);
     } catch (error) {
-      console.error("Error getting all funds from API:", error);
+      console.error("Error getting all funds:", error);
       throw error; // Let the caller handle the error
     }
   }

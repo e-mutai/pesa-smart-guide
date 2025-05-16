@@ -17,20 +17,32 @@ const Funds = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [riskFilter, setRiskFilter] = useState('all');
   const [assetClassFilter, setAssetClassFilter] = useState('all');
+  const [error, setError] = useState<string | null>(null);
   
   const { toast } = useToast();
   
   useEffect(() => {
     const fetchFunds = async () => {
       try {
+        setIsLoading(true);
+        setError(null);
         const allFunds = await apiService.getAllFunds();
-        setFunds(allFunds);
-        setFilteredFunds(allFunds);
-        if (allFunds.length > 0) {
+        
+        if (allFunds && allFunds.length > 0) {
+          setFunds(allFunds);
+          setFilteredFunds(allFunds);
           setSelectedFund(allFunds[0]);
+        } else {
+          setError("No funds available");
+          toast({
+            title: "Warning",
+            description: "No funds available at this time.",
+            variant: "destructive",
+          });
         }
       } catch (error) {
         console.error('Error fetching funds:', error);
+        setError("Could not load fund data");
         toast({
           title: "Error",
           description: "Could not load fund data. Please try again later.",
@@ -104,6 +116,19 @@ const Funds = () => {
           
           {isLoading ? (
             <LoadingState />
+          ) : error ? (
+            <div className="text-center py-12">
+              <div className="bg-red-50 p-6 rounded-lg border border-red-200 max-w-md mx-auto">
+                <h3 className="text-lg font-medium text-red-800 mb-2">Error Loading Funds</h3>
+                <p className="text-red-700">{error}</p>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="mt-4 px-4 py-2 bg-red-100 text-red-800 rounded hover:bg-red-200"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
           ) : (
             <div>
               {/* Filters */}
