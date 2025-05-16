@@ -1,6 +1,6 @@
 
 import axios from 'axios';
-import { realDataService } from './realDataService';
+import { realDataService, Fund } from './finance';
 
 // Setup axios with a base URL (adjust when actual backend is available)
 const api = axios.create({
@@ -23,22 +23,8 @@ export interface RiskProfileData {
   monthlyContribution: string;
 }
 
-export interface Fund {
-  id: string;
-  name: string;
-  company: string;
-  performancePercent: number;
-  risk: string;
-  description: string;
-  fee: number;
-  minimumInvestment: number;
-  assetClass: string;
-  historicalData: {
-    date: string;
-    value: number;
-    benchmark?: number;
-  }[];
-}
+// Re-export Fund type for compatibility
+export type { Fund };
 
 // API functions
 export const apiService = {
