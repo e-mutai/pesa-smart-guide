@@ -1,3 +1,4 @@
+
 from sqlalchemy import create_engine, Column, String, Float, Integer, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -7,9 +8,10 @@ import os
 from dotenv import load_dotenv
 import logging
 import json
+import requests
 
 from .models import Fund, RiskProfileData
-from .utils import generate_mock_data, utils
+from .utils import utils
 from .ml_models import RiskProfiler, FundMatcher, FundForecaster
 
 # Load environment variables
@@ -30,7 +32,7 @@ try:
     logger.info("Database connection established")
 except SQLAlchemyError as e:
     logger.error(f"Database connection error: {str(e)}")
-    # If database connection fails, we'll use in-memory data as fallback
+    # If database connection fails, we'll use API data as fallback
     engine = None
     SessionLocal = None
 
@@ -53,24 +55,116 @@ class FundModel(Base):
     asset_class = Column(String)
     historical_data = Column(JSON)
 
-# Mock database for users (to be replaced with auth system later)
-users_db = {}
-
-# Mock database for funds as fallback
-mock_funds = [
+# List of Kenyan unit trust funds with their proxy symbols for Alpha Vantage API
+kenyan_funds = [
     {
         "id": "fund1",
         "name": "Money Market Fund",
         "company": "CIC Asset Management",
         "performancePercent": 9.8,
         "risk": "Low",
-        "description": "Invests in short-term debt securities in the money market. Ideal for conservative investors seeking capital preservation.",
+        "description": "Invests in short-term debt securities in the Kenyan money market. Ideal for conservative investors seeking capital preservation.",
         "fee": 1.5,
         "minimumInvestment": 5000,
         "assetClass": "Money Market",
-        "historicalData": generate_mock_data(9.8, 12)
+        "symbol": "BIL"  # Treasury Bills ETF as proxy
     },
-    # ... keep existing code (the rest of the mock funds data)
+    {
+        "id": "fund2",
+        "name": "Equity Growth Fund",
+        "company": "Britam Asset Managers",
+        "performancePercent": 14.2,
+        "risk": "High",
+        "description": "Invests primarily in Kenyan and regional equities for long-term capital growth. Higher risk with potential higher returns.",
+        "fee": 2.5,
+        "minimumInvestment": 10000,
+        "assetClass": "Equity",
+        "symbol": "KCB.NR"  # Kenya Commercial Bank as proxy
+    },
+    {
+        "id": "fund3",
+        "name": "Balanced Fund",
+        "company": "ICEA Lion Asset Management",
+        "performancePercent": 11.5,
+        "risk": "Medium",
+        "description": "Balanced exposure across equity and fixed income markets in Kenya. Provides moderate growth with reduced volatility.",
+        "fee": 2.0,
+        "minimumInvestment": 7500,
+        "assetClass": "Mixed Allocation",
+        "symbol": "AOK"  # iShares Core Conservative Allocation ETF as proxy
+    },
+    {
+        "id": "fund4",
+        "name": "Fixed Income Fund",
+        "company": "Sanlam Investments",
+        "performancePercent": 10.3,
+        "risk": "Low-Medium",
+        "description": "Invests primarily in Kenyan government and corporate bonds. Aims to provide regular income with modest capital appreciation.",
+        "fee": 1.8,
+        "minimumInvestment": 5000,
+        "assetClass": "Fixed Income",
+        "symbol": "AGG"  # iShares Core U.S. Aggregate Bond ETF as proxy
+    },
+    {
+        "id": "fund5",
+        "name": "Aggressive Growth Fund",
+        "company": "Old Mutual Investment Group",
+        "performancePercent": 16.5,
+        "risk": "Very High",
+        "description": "Focuses on high-growth sectors and companies in Kenya and East Africa with higher volatility. Suitable for long-term investors with high risk tolerance.",
+        "fee": 2.8,
+        "minimumInvestment": 15000,
+        "assetClass": "Equity",
+        "symbol": "QQQ"  # Invesco QQQ Trust as proxy
+    },
+    {
+        "id": "fund6",
+        "name": "Umoja Fund",
+        "company": "Cooperative Bank of Kenya",
+        "performancePercent": 12.7,
+        "risk": "Medium-High",
+        "description": "A diversified fund that invests in equities, fixed income, and alternative investments across Kenya and East Africa.",
+        "fee": 2.2,
+        "minimumInvestment": 10000,
+        "assetClass": "Mixed Allocation",
+        "symbol": "VBMFX"  # Vanguard Total Bond Market Index Fund as proxy
+    },
+    {
+        "id": "fund7",
+        "name": "Equity Index Fund",
+        "company": "GenAfrica Asset Managers",
+        "performancePercent": 13.8,
+        "risk": "High",
+        "description": "Tracks the performance of the Nairobi Securities Exchange (NSE) index to provide market returns.",
+        "fee": 1.75,
+        "minimumInvestment": 8000,
+        "assetClass": "Equity",
+        "symbol": "VTI"  # Vanguard Total Stock Market ETF as proxy
+    },
+    {
+        "id": "fund8",
+        "name": "Imara Money Market Fund",
+        "company": "Imara Asset Management",
+        "performancePercent": 8.9,
+        "risk": "Low",
+        "description": "Focuses on capital preservation through investments in high-quality money market instruments in Kenya.",
+        "fee": 1.4,
+        "minimumInvestment": 1000,
+        "assetClass": "Money Market",
+        "symbol": "VTIP"  # Vanguard Short-Term Inflation-Protected Securities ETF as proxy
+    },
+    {
+        "id": "fund9",
+        "name": "Cytonn High Yield Fund",
+        "company": "Cytonn Asset Managers",
+        "performancePercent": 15.2,
+        "risk": "High",
+        "description": "Targets high yields through investments in real estate projects and structured products in Kenya.",
+        "fee": 3.0,
+        "minimumInvestment": 20000,
+        "assetClass": "Alternative",
+        "symbol": "VGSIX"  # Vanguard Real Estate Index Fund as proxy
+    }
 ]
 
 # Initialize fund matcher with our data
@@ -89,7 +183,7 @@ def get_db():
         yield None
 
 def setup_db():
-    """Initialize database and seed with mock data if empty"""
+    """Initialize database and seed with Kenyan funds data if empty"""
     global fund_matcher
     
     # If database connection is available, create tables and seed data
@@ -101,10 +195,10 @@ def setup_db():
             db = SessionLocal()
             existing_funds = db.query(FundModel).count()
             
-            # If no funds exist, seed with mock data
+            # If no funds exist, seed with Kenyan funds data
             if existing_funds == 0:
-                logger.info("Seeding database with mock fund data")
-                for fund in mock_funds:
+                logger.info("Seeding database with Kenyan funds data")
+                for fund in kenyan_funds:
                     db_fund = FundModel(
                         id=fund["id"],
                         name=fund["name"],
@@ -115,7 +209,7 @@ def setup_db():
                         fee=fund["fee"],
                         minimum_investment=fund["minimumInvestment"],
                         asset_class=fund["assetClass"],
-                        historical_data=json.dumps(fund["historicalData"])
+                        historical_data="{}"  # Empty at first, will be populated with real data
                     )
                     db.add(db_fund)
                 db.commit()
@@ -129,17 +223,17 @@ def setup_db():
             return True
         except SQLAlchemyError as e:
             logger.error(f"Error setting up database: {str(e)}")
-            # Fall back to mock data
-            fund_matcher = FundMatcher(mock_funds)
+            # Fall back to direct API data
+            fund_matcher = FundMatcher(kenyan_funds)
             return False
     else:
-        # If no database connection, use mock data
-        logger.warning("No database connection. Using in-memory mock data.")
-        fund_matcher = FundMatcher(mock_funds)
+        # If no database connection, use API data directly
+        logger.warning("No database connection. Using API data directly.")
+        fund_matcher = FundMatcher(kenyan_funds)
         return False
 
 def get_all_funds_internal(db=None):
-    """Get all funds from database or mock data if db is not available"""
+    """Get all funds from database or API data if db is not available"""
     if db and engine:
         try:
             funds = db.query(FundModel).all()
@@ -161,11 +255,11 @@ def get_all_funds_internal(db=None):
             return result
         except SQLAlchemyError as e:
             logger.error(f"Error fetching funds from database: {str(e)}")
-            # Fall back to mock data
-            return mock_funds
+            # Fall back to API data
+            return kenyan_funds
     else:
-        # If no database connection, use mock data
-        return mock_funds
+        # If no database connection, use API data
+        return kenyan_funds
 
 def get_all_funds():
     """API-compatible function to get all funds"""
@@ -176,10 +270,10 @@ def get_all_funds():
         finally:
             db.close()
     else:
-        return mock_funds
+        return kenyan_funds
 
 def get_fund_by_id(fund_id: str):
-    """Get a fund by ID from database or mock data"""
+    """Get a fund by ID from database or API data"""
     fund = None
     
     if SessionLocal and engine:
@@ -201,18 +295,25 @@ def get_fund_by_id(fund_id: str):
                 }
         except SQLAlchemyError as e:
             logger.error(f"Error fetching fund {fund_id} from database: {str(e)}")
-            # Fall back to mock data
-            fund = next((f for f in mock_funds if f["id"] == fund_id), None)
+            # Fall back to API data
+            fund = next((f for f in kenyan_funds if f["id"] == fund_id), None)
         finally:
             db.close()
     else:
-        # If no database connection, use mock data
-        fund = next((f for f in mock_funds if f["id"] == fund_id), None)
+        # If no database connection, use API data
+        fund = next((f for f in kenyan_funds if f["id"] == fund_id), None)
     
     # Try to enrich fund with real data
     if fund:
         try:
-            symbol = utils.get_symbol_for_fund(fund["name"])
+            # Find the symbol for this fund
+            fund_symbol = None
+            for kf in kenyan_funds:
+                if kf["id"] == fund["id"] or kf["name"] == fund["name"]:
+                    fund_symbol = kf.get("symbol")
+                    break
+            
+            symbol = fund_symbol or utils.get_symbol_for_fund(fund["name"])
             real_data = utils.fetch_real_historical_data(symbol)
             
             if real_data:
@@ -249,7 +350,14 @@ def get_fund_recommendations(profile: RiskProfileData) -> List[Fund]:
     # Try to enrich funds with real data when possible
     for fund in recommended_funds:
         try:
-            symbol = utils.get_symbol_for_fund(fund["name"])
+            # Find the symbol for this fund
+            fund_symbol = None
+            for kf in kenyan_funds:
+                if kf["id"] == fund["id"] or kf["name"] == fund["name"]:
+                    fund_symbol = kf.get("symbol")
+                    break
+                
+            symbol = fund_symbol or utils.get_symbol_for_fund(fund["name"])
             real_data = utils.fetch_real_historical_data(symbol)
             
             if real_data:

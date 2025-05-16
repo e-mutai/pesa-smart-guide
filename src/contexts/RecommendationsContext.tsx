@@ -15,6 +15,8 @@ interface RecommendationsContextType {
   setRiskScore: (score: number) => void;
   selectedFund: Fund | null;
   setSelectedFund: (fund: Fund | null) => void;
+  error: string | null;
+  setError: (error: string | null) => void;
 }
 
 const RecommendationsContext = createContext<RecommendationsContextType | undefined>(undefined);
@@ -27,6 +29,7 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
   const [riskCategory, setRiskCategory] = useState('');
   const [riskScore, setRiskScore] = useState(0);
   const [selectedFund, setSelectedFund] = useState<Fund | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <RecommendationsContext.Provider value={{
@@ -41,7 +44,9 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
       riskScore,
       setRiskScore,
       selectedFund,
-      setSelectedFund
+      setSelectedFund,
+      error,
+      setError
     }}>
       {children}
     </RecommendationsContext.Provider>

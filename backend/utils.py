@@ -1,10 +1,8 @@
 
 from datetime import datetime, timedelta
-import random
 import requests
-import json
-import os
 import logging
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -13,31 +11,18 @@ logger = logging.getLogger(__name__)
 # Alpha Vantage API key (should be moved to environment variable in production)
 ALPHA_VANTAGE_API_KEY = os.getenv('ALPHA_VANTAGE_API_KEY', 'demo')
 
-def generate_mock_data(avg_return, months):
-    """Generate mock historical data for funds"""
-    today = datetime.now()
-    data = []
-    current_value = 100
-    benchmark_value = 100
-    
-    for i in range(months - 1, -1, -1):
-        date = today - timedelta(days=i*30)
-        date_str = date.strftime("%Y-%m")
-        
-        # Add some random variation
-        monthly_return = (avg_return / 12) + (random.random() * 2 - 1)
-        benchmark_return = (8.5 / 12) + (random.random() * 1.5 - 0.75)
-        
-        current_value *= (1 + monthly_return / 100)
-        benchmark_value *= (1 + benchmark_return / 100)
-        
-        data.append({
-            "date": date_str,
-            "value": round(current_value - 100, 2),
-            "benchmark": round(benchmark_value - 100, 2)
-        })
-    
-    return data
+# Mapping of Kenyan fund names to proxy symbols for Alpha Vantage API
+KENYAN_FUND_SYMBOLS = {
+    "Money Market Fund": "BIL",  # Treasury Bills ETF
+    "Equity Growth Fund": "KCB.NR",  # Kenya Commercial Bank
+    "Balanced Fund": "AOK",  # iShares Core Conservative Allocation ETF
+    "Fixed Income Fund": "AGG",  # iShares Core U.S. Aggregate Bond ETF
+    "Aggressive Growth Fund": "QQQ",  # Invesco QQQ Trust
+    "Umoja Fund": "VBMFX",  # Vanguard Total Bond Market Index Fund
+    "Equity Index Fund": "VTI",  # Vanguard Total Stock Market ETF
+    "Imara Money Market Fund": "VTIP",  # Vanguard Short-Term Inflation-Protected Securities ETF
+    "Cytonn High Yield Fund": "VGSIX"  # Vanguard Real Estate Index Fund
+}
 
 def fetch_real_historical_data(symbol, months=12):
     """Fetch real historical market data for a given symbol using Alpha Vantage API"""
@@ -90,7 +75,7 @@ def fetch_real_historical_data(symbol, months=12):
 
 def get_benchmark_data(months=12):
     """Get market benchmark data (S&P 500) for comparison"""
-    return fetch_real_historical_data("SPY", months) or generate_mock_data(8.5, months)
+    return fetch_real_historical_data("SPY", months)
 
 def enrich_with_benchmark(historical_data):
     """Add benchmark data to historical data points"""
@@ -109,12 +94,4 @@ def enrich_with_benchmark(historical_data):
 
 def get_symbol_for_fund(fund_name):
     """Map fund names to stock symbols for fetching real data"""
-    symbol_map = {
-        "Money Market Fund": "BIL",  # Treasury Bills ETF
-        "Equity Growth Fund": "VTI",  # Total Stock Market ETF
-        "Balanced Fund": "AOK",  # iShares Core Conservative Allocation ETF
-        "Fixed Income Fund": "AGG",  # iShares Core U.S. Aggregate Bond ETF
-        "Aggressive Growth Fund": "QQQ"  # Invesco QQQ Trust
-    }
-    
-    return symbol_map.get(fund_name, "SPY")  # Default to S&P 500
+    return KENYAN_FUND_SYMBOLS.get(fund_name, "SPY")  # Default to S&P 500
