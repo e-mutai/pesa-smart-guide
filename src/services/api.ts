@@ -1,5 +1,6 @@
 
 import axios from 'axios';
+import { realDataService } from './realDataService';
 
 // Setup axios with a base URL (adjust when actual backend is available)
 const api = axios.create({
@@ -46,12 +47,39 @@ export const apiService = {
     try {
       // Try to get recommendations from the backend
       const response = await api.post('/recommendations', profileData);
-      return response.data;
+      let recommendations = response.data;
+      
+      // Attempt to enrich recommendations with real data
+      try {
+        const enrichPromises = recommendations.map((fund: Fund) => 
+          realDataService.enrichFundWithRealData(fund)
+        );
+        recommendations = await Promise.all(enrichPromises);
+        console.log("Using real market data for recommendations");
+      } catch (enrichError) {
+        console.warn("Could not enrich with real data, using backend data:", enrichError);
+      }
+      
+      return recommendations;
     } catch (error) {
       console.error("Error getting recommendations from API:", error);
       console.log("Falling back to mock data");
+      
       // Fallback to mock data if API is unavailable
-      return mockRecommendations;
+      let fallbackRecommendations = mockRecommendations;
+      
+      // Still try to enrich with real data if possible
+      try {
+        const enrichPromises = fallbackRecommendations.map((fund: Fund) => 
+          realDataService.enrichFundWithRealData(fund)
+        );
+        fallbackRecommendations = await Promise.all(enrichPromises);
+        console.log("Using real market data with mock recommendations");
+      } catch (enrichError) {
+        console.warn("Could not enrich mock data, using fully mocked data:", enrichError);
+      }
+      
+      return fallbackRecommendations;
     }
   },
   
@@ -60,13 +88,33 @@ export const apiService = {
     try {
       // Try to get fund details from the backend
       const response = await api.get(`/funds/${fundId}`);
-      return response.data;
+      let fund = response.data;
+      
+      // Attempt to enrich with real data
+      try {
+        fund = await realDataService.enrichFundWithRealData(fund);
+        console.log("Using real market data for fund details");
+      } catch (enrichError) {
+        console.warn("Could not enrich with real data:", enrichError);
+      }
+      
+      return fund;
     } catch (error) {
       console.error("Error getting fund details from API:", error);
       console.log("Falling back to mock data");
+      
       // Fallback to mock data
-      const fund = mockRecommendations.find(f => f.id === fundId);
+      let fund = mockRecommendations.find(f => f.id === fundId);
       if (!fund) throw new Error("Fund not found");
+      
+      // Try to enrich mock data with real data
+      try {
+        fund = await realDataService.enrichFundWithRealData(fund);
+        console.log("Using real market data with mock fund");
+      } catch (enrichError) {
+        console.warn("Using fully mocked data for fund:", enrichError);
+      }
+      
       return fund;
     }
   },
@@ -76,12 +124,39 @@ export const apiService = {
     try {
       // Try to get all funds from the backend
       const response = await api.get('/funds');
-      return response.data;
+      let funds = response.data;
+      
+      // Attempt to enrich with real data
+      try {
+        const enrichPromises = funds.map((fund: Fund) => 
+          realDataService.enrichFundWithRealData(fund)
+        );
+        funds = await Promise.all(enrichPromises);
+        console.log("Using real market data for all funds");
+      } catch (enrichError) {
+        console.warn("Could not enrich with real data, using backend data:", enrichError);
+      }
+      
+      return funds;
     } catch (error) {
       console.error("Error getting all funds from API:", error);
       console.log("Falling back to mock data");
+      
       // Fallback to mock data
-      return mockRecommendations;
+      let fallbackFunds = mockRecommendations;
+      
+      // Try to enrich mock data with real data
+      try {
+        const enrichPromises = fallbackFunds.map((fund: Fund) => 
+          realDataService.enrichFundWithRealData(fund)
+        );
+        fallbackFunds = await Promise.all(enrichPromises);
+        console.log("Using real market data with mock funds");
+      } catch (enrichError) {
+        console.warn("Using fully mocked data for all funds:", enrichError);
+      }
+      
+      return fallbackFunds;
     }
   }
 };

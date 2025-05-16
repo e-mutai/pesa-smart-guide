@@ -1,4 +1,3 @@
-
 from sqlalchemy import create_engine, Column, String, Float, Integer, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -10,7 +9,7 @@ import logging
 import json
 
 from .models import Fund, RiskProfileData
-from .utils import generate_mock_data
+from .utils import generate_mock_data, utils
 from .ml_models import RiskProfiler, FundMatcher, FundForecaster
 
 # Load environment variables
@@ -181,12 +180,14 @@ def get_all_funds():
 
 def get_fund_by_id(fund_id: str):
     """Get a fund by ID from database or mock data"""
+    fund = None
+    
     if SessionLocal and engine:
         db = SessionLocal()
         try:
             fund = db.query(FundModel).filter(FundModel.id == fund_id).first()
             if fund:
-                return {
+                fund = {
                     "id": fund.id,
                     "name": fund.name,
                     "company": fund.company,
@@ -198,18 +199,34 @@ def get_fund_by_id(fund_id: str):
                     "assetClass": fund.asset_class,
                     "historicalData": json.loads(fund.historical_data) if isinstance(fund.historical_data, str) else fund.historical_data
                 }
-            return None
         except SQLAlchemyError as e:
             logger.error(f"Error fetching fund {fund_id} from database: {str(e)}")
             # Fall back to mock data
             fund = next((f for f in mock_funds if f["id"] == fund_id), None)
-            return fund
         finally:
             db.close()
     else:
         # If no database connection, use mock data
         fund = next((f for f in mock_funds if f["id"] == fund_id), None)
-        return fund
+    
+    # Try to enrich fund with real data
+    if fund:
+        try:
+            symbol = utils.get_symbol_for_fund(fund["name"])
+            real_data = utils.fetch_real_historical_data(symbol)
+            
+            if real_data:
+                # Update with real historical data
+                fund["historicalData"] = utils.enrich_with_benchmark(real_data)
+                
+                # Update performance percentage based on the latest data point
+                if len(real_data) > 0:
+                    fund["performancePercent"] = real_data[-1]["value"]
+                    logger.info(f"Updated fund {fund['name']} with real market data")
+        except Exception as e:
+            logger.error(f"Error enriching fund with real data: {str(e)}")
+    
+    return fund
 
 def get_fund_recommendations(profile: RiskProfileData) -> List[Fund]:
     """
@@ -228,6 +245,26 @@ def get_fund_recommendations(profile: RiskProfileData) -> List[Fund]:
     
     # Match funds based on risk category and profile
     recommended_funds = fund_matcher.match_funds(profile.dict(), risk_category)
+    
+    # Try to enrich funds with real data when possible
+    for fund in recommended_funds:
+        try:
+            symbol = utils.get_symbol_for_fund(fund["name"])
+            real_data = utils.fetch_real_historical_data(symbol)
+            
+            if real_data:
+                # Update with real historical data
+                fund["historicalData"] = utils.enrich_with_benchmark(real_data)
+                
+                # Update performance percentage based on the latest data point
+                if real_data and len(real_data) > 0:
+                    fund["performancePercent"] = real_data[-1]["value"]
+                    logger.info(f"Updated fund {fund['name']} with real market data")
+            else:
+                logger.info(f"No real data available for {fund['name']}, using forecaster")
+        except Exception as e:
+            logger.error(f"Error fetching real data for {fund['name']}: {str(e)}")
+            # Continue with existing data/forecasts
     
     # Add forecasts to each fund
     for fund in recommended_funds:
