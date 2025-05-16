@@ -10,11 +10,14 @@ const FundRecommendationsSidebar = () => {
     setSelectedFund(fund);
   };
 
+  // Make sure recommendedFunds is an array and has contents
+  const hasRecommendations = Array.isArray(recommendedFunds) && recommendedFunds.length > 0;
+
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Recommended Funds</h2>
       <div className="space-y-4">
-        {Array.isArray(recommendedFunds) && recommendedFunds.length > 0 ? (
+        {hasRecommendations ? (
           recommendedFunds.map((fund) => (
             <FundCard
               key={fund.id}

@@ -22,6 +22,7 @@ const RecommendationsContext = createContext<RecommendationsContextType | undefi
 export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  // Ensure recommendedFunds is always initialized as an array
   const [recommendedFunds, setRecommendedFunds] = useState<Fund[]>([]);
   const [riskCategory, setRiskCategory] = useState('');
   const [riskScore, setRiskScore] = useState(0);
